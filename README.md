@@ -112,7 +112,7 @@ FP16 → LoRA (200 steps, r=16, α=32) → merge → GPTQ W4A16 → tie_weights 
 
 | 실험 | 기법 | 캘리브레이션 | Score | 비고 |
 |:---:|:---|:---|:---:|:---|
-| Try_000 | GPTQ W4A16 | MANTA 128 | 0.5914 | 베이스라인 |
+| Try_000 | GPTQ W4A16 | MANTA 128 | 0.5914 | 초기 시도 |
 | **Try_014** | **GPTQ W4A16** | **MANTA 128 + KMMLU 32** | **0.59878** | **최종 제출** ✅ |
 | Try_017 | LoRA + GPTQ | MANTA 128 + KMMLU 32 | 미제출 | 실험적 |
 
