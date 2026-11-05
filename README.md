@@ -22,8 +22,8 @@
 |:---|:---|
 | 🏆 **결과** | **239위 / 628팀**, Score **0.59878** |
 | ⚡ **핵심 전략** | GPTQ W4A16 양자화 + 2-Source 캘리브레이션 (MANTA + KMMLU) |
-| 📈 **개선** | 베이스라인(0.5914) → 최종(0.59878) — 캘리브레이션 도메인 정렬로 +0.74%p |
-| 🧪 **실험적 시도** | Pre-GPTQ LoRA 정렬 (QAT-inspired approach) |
+| 📈 **개선** | 첫 GPTQ 제출(0.5914) → 최종(0.59878), Score +0.0074 (KMMLU 32샘플 혼합 캘리브레이션) |
+| 🧪 **실험적 시도** | Pre-GPTQ LoRA 정렬 (QAT-inspired, 미제출) |
 | 🔧 **해결한 기술 이슈** | Tied weights 복원, KMMLU subset 순환 로드, submit.zip 경로 구조 |
 
 ---
@@ -53,8 +53,8 @@ flowchart TD
     end
 
     subgraph Model["🧠 EXAONE-4.0-1.2B"]
-        FP["FP16 원본\n~2.4GB"]
-        INT["INT4 양자화\n~930MB"]
+        FP["FP16 원본\n2.56GB"]
+        INT["INT4 양자화\n971MB"]
     end
 
     M --> H
@@ -83,7 +83,7 @@ OBS(Optimal Brain Surgeon) 기반의 Post-Training Quantization. 한 가중치�
 
 ### 2. 2-Source 캘리브레이션 전략 (최종 제출)
 
-GPTQ의 Hessian은 캘리브레이션 데이터의 활성화 통계로 계산됩니다. **평가 도메인(한국어 MCQ)과 유사한 KMMLU를 혼합**하여 Hessian 추정 정확도를 향상시켰습니다.
+GPTQ의 Hessian은 캘리브레이션 데이터의 활성화 통계로 계산됩니다. **평가 도메인(한국어 MCQ)과 유사한 KMMLU를 혼합**하여 Hessian이 평가 입력 분포를 더 잘 반영하도록 했습니다.
 
 | 데이터 | 샘플 | 역할 |
 |:---|:---:|:---|
@@ -102,7 +102,7 @@ FP16 → LoRA (200 steps, r=16, α=32) → merge → GPTQ W4A16 → tie_weights 
 
 | 이슈 | 원인 | 해결 |
 |:---|:---|:---|
-| **모델 크기 2배 증가** | tied weights 연결이 양자화 후 끊어짐 | `tie_weights()` 명시적 호출 |
+| **모델 크기 증가 (971MB → 1.39GB)** | tied weights 연결이 양자화 후 끊어짐 | `tie_weights()` 명시적 호출 |
 | **KMMLU 전체 로드 불가** | "all" config 미존재 | 과목별 subset 순환 로드 |
 | **submit.zip 경로 오류** | Colab 절대 경로 포함 | root_dir/base_dir 분리 |
 
@@ -150,7 +150,7 @@ FP16 → LoRA (200 steps, r=16, α=32) → merge → GPTQ W4A16 → tie_weights 
 <details>
 <summary><b>Tied Weights 처리</b></summary>
 
-> EXAONE은 embed_tokens과 lm_head가 가중치를 공유(tie)하는 구조입니다. 양자화 후 저장 시 이 연결이 끊어지면 814MB → 1.4GB로 증가하므로, `tie_weights()` 호출로 복원합니다.
+> EXAONE은 embed_tokens과 lm_head가 가중치를 공유(tie)하는 구조입니다. 양자화 후 저장 시 이 연결이 끊어지면 971MB → 1.39GB로 증가하므로, `tie_weights()` 호출로 복원합니다.
 </details>
 
 ---
@@ -158,16 +158,12 @@ FP16 → LoRA (200 steps, r=16, α=32) → merge → GPTQ W4A16 → tie_weights 
 ## 📁 프로젝트 구조
 
 ```
-LG_aimers/
-├── code/
-│   ├── base_model/                   # EXAONE-4.0-1.2B 원본
-│   ├── Try_000.ipynb                   # GPTQ ۲�이스라인
-│   ├── Try_014_gptq_bench.ipynb        # ★ 최종 제출
-│   ├── Try_017_lora_gptq.ipynb        # LoRA + GPTQ 실험
-│   └── trash/                          # 폐기된 실험 (24개)
-├── repo/
-│   └── README.md
-└── notion_document.md
+LG-Aimers-8-quantization/
+├── notebooks/
+│   ├── Try_000.ipynb                   # GPTQ 첫 제출 (MANTA 128)
+│   ├── Try_014_gptq_bench.ipynb        # ★ 최종 제출 (MANTA 128 + KMMLU 32)
+│   └── Try_017_lora_gptq.ipynb         # LoRA + GPTQ 실험 (미제출)
+└── README.md
 ```
 
 ---
